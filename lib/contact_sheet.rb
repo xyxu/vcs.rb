@@ -59,7 +59,7 @@ module VCSRuby
     def filename
       "#{@out_filename}#{@format}"
     end
-    
+
     def format= format
       @format = ".#{format.to_s}"
     end
@@ -101,12 +101,12 @@ module VCSRuby
       @thumbnail_width = (height.to_f / @thumbnail_height * thumbnail_width).to_i
       @thumbnail_height = height
     end
-    
+
     def aspect_ratio= aspect_ratio
       @thumbnail_width = (@thumbnail_height * aspect_ratio).to_i
       @aspect_ratio = aspect_ratio
     end
-    
+
     def from= time
       if (TimeIndex.new(0) < time) && (time < to) && (time < @length)
         @from = time
@@ -204,9 +204,9 @@ private
     def detect_dimensions
       @thumbnail_width = @video.video.width
       @thumbnail_height = @video.video.height
-      
+
       @aspect_ratio = @video.video.aspect_ratio
-      
+
       if @aspect_ratio == 0 || @aspect_ratio == nil
         @aspect_ratio = Rational(@video.video.width, @video.video.height)
       else
@@ -354,8 +354,14 @@ private
         convert << montage.path
         convert.append
         if @signature && @signature.length > 0
+          # new line
+          word_num = (montage.width / (Configuration.instance.signature_font.line_width * 2)).to_i
+          chunk = @signature.scan(/.{1,#{word_num}}/)
+          line_num = 1 + chunk.size
+          @signature = chunk.join('\n')
+
           convert.stack do |a|
-            a.size "#{montage.width}x#{signature_height}"
+            a.size "#{montage.width}x#{signature_height * line_num}"
             a.gravity 'Center'
             a.xc Configuration.instance.signature_background
             if Configuration.instance.signature_font.exists?

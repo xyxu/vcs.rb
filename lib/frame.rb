@@ -56,7 +56,7 @@ module VCSRuby
     def blank?
       image = MiniMagick::Image.open filename
       image.colorspace 'Gray'
-      mean = image['%[fx:image.mean]'].to_f
+      mean = image['%[fx:mean]'].to_f
       return mean < Configuration.instance.blank_threshold
     end
 

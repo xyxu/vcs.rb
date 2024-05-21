@@ -18,6 +18,7 @@ module VCSRuby
 
     attr_reader :header_font, :title_font, :timestamp_font, :signature_font
     attr_writer :verbose, :quiet, :capturer
+    attr_accessor :config
 
     def initialize
       default_config_file = File.expand_path("defaults.yml", File.dirname(__FILE__))

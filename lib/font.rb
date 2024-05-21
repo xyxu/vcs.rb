@@ -9,7 +9,7 @@ module VCSRuby
   IMFont = Struct.new(:name, :family, :style, :stretch, :weight, :glyphs)
 
   class Font
-    attr_reader :name, :path, :size
+    attr_accessor :name, :path, :size
 
     @@fonts = {}
 
@@ -74,6 +74,16 @@ module VCSRuby
         convert.pointsize size
         convert << 'label:F'
         convert.format '%h'
+        convert << 'info:'
+      end.to_i
+    end
+
+    def line_width
+      MiniMagick::Tool::Convert.new do |convert|
+        convert.font path if exists?
+        convert.pointsize size
+        convert << 'label:F'
+        convert.format '%w'
         convert << 'info:'
       end.to_i
     end
