@@ -1,5 +1,7 @@
 require File.expand_path("lib/version", File.dirname(__FILE__))
 
+require 'date'
+
 Gem::Specification.new do |spec|
   spec.name        = 'vcs_ruby'
   spec.version     = VCSRuby::read_version
