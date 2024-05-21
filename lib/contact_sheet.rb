@@ -8,7 +8,7 @@ require 'yaml'
 
 module VCSRuby
   class ContactSheet
-    attr_accessor :signature, :title, :highlight
+    attr_accessor :signature, :title, :highlight, :with_header
     attr_accessor :softshadow, :timestamp, :polaroid
     attr_reader :thumbnail_width, :thumbnail_height, :aspect_ratio, :format
     attr_reader :length, :from, :to
@@ -254,6 +254,54 @@ private
       file_path
     end
 
+    def create_header montage
+      file_path = File::join(@tempdir, 'header.png')
+      header_height = Configuration.instance.header_font.line_height * 3
+      MiniMagick::Tool::Convert.new do |convert|
+        convert.stack do |a|
+          a.size "#{montage.width - 18}x1"
+          a.xc Configuration.instance.header_background
+          a.size.+
+          if Configuration.instance.header_font.exists?
+            a.font Configuration.instance.header_font.path
+          end
+          a.pointsize Configuration.instance.header_font.size
+          a.background Configuration.instance.header_background
+          a.fill Configuration.instance.header_color
+          a.stack do |b|
+            b.gravity 'West'
+            b.stack do |c|
+              c << 'label:Filename: '
+              if Configuration.instance.header_font.exists?
+                c.font  Configuration.instance.header_font.path
+              end
+              c << 'label:' + File.basename(@video.full_path)
+              c.append.+
+            end
+            if Configuration.instance.header_font.exists?
+              b.font Configuration.instance.header_font.path
+            end
+            b << "label:File size: #{Tools.to_human_size(File.size(@video.full_path))}"
+            b << "label:Length: #{@length.to_timestamp}"
+            b.append
+            b.crop "#{montage.width}x#{header_height}+0+0"
+          end
+          a.append
+          a.stack do |b|
+            b.size "#{montage.width}x#{header_height}"
+            b.gravity 'NorthEast'
+            b.fill Configuration.instance.header_color
+            b.annotate '+0-1'
+            b << "Dimensions: #{@video.video.width}x#{@video.video.height}\nFormat: #{@video.video.codec(true)} / #{@video.audio ? @video.audio.codec(true) : 'no audio'}\nFPS: #{"%.02f" % @video.video.frame_rate.to_f}"
+          end
+          a.bordercolor Configuration.instance.header_background
+          a.border 9
+        end
+        convert << file_path
+      end
+      return file_path
+    end
+
     def create_title montage
       file_path = File::join(@tempdir, 'title.png')
       MiniMagick::Tool::Convert.new do |convert|
@@ -307,48 +355,8 @@ private
 
     def add_header_and_footer montage
       file_path = File::join(@tempdir, filename)
-      header_height = Configuration.instance.header_font.line_height * 3
-      signature_height = Configuration.instance.signature_font.line_height + 8
       MiniMagick::Tool::Convert.new do |convert|
-        convert.stack do |a|
-          a.size "#{montage.width - 18}x1"
-          a.xc Configuration.instance.header_background
-          a.size.+
-          if Configuration.instance.header_font.exists?
-            a.font Configuration.instance.header_font.path
-          end
-          a.pointsize Configuration.instance.header_font.size
-          a.background Configuration.instance.header_background
-          a.fill Configuration.instance.header_color
-          a.stack do |b|
-            b.gravity 'West'
-            b.stack do |c|
-              c.label 'Filename: '
-              if Configuration.instance.header_font.exists?
-                c.font  Configuration.instance.header_font.path
-              end
-              c.label File.basename(@video.full_path)
-              c.append.+
-            end
-            if Configuration.instance.header_font.exists?
-              b.font Configuration.instance.header_font.path
-            end
-            b.label "File size: #{Tools.to_human_size(File.size(@video.full_path))}"
-            b.label "Length: #{@length.to_timestamp}"
-            b.append
-            b.crop "#{montage.width}x#{header_height}+0+0"
-          end
-          a.append
-          a.stack do |b|
-            b.size "#{montage.width}x#{header_height}"
-            b.gravity 'NorthEast'
-            b.fill Configuration.instance.header_color
-            b.annotate '+0-1'
-            b << "Dimensions: #{@video.video.width}x#{@video.video.height}\nFormat: #{@video.video.codec(true)} / #{@video.audio ? @video.audio.codec(true) : 'no audio'}\nFPS: #{"%.02f" % @video.video.frame_rate.to_f}"
-          end
-          a.bordercolor Configuration.instance.header_background
-          a.border 9
-        end
+        convert << create_header(montage) if @with_header
         convert << create_title(montage) if @title
         convert << create_highlight(montage) if @highlight
         convert << montage.path
@@ -360,6 +368,7 @@ private
           line_num = 1 + chunk.size
           @signature = chunk.join('\n')
 
+          signature_height = Configuration.instance.signature_font.line_height + 8
           convert.stack do |a|
             a.size "#{montage.width}x#{signature_height * line_num}"
             a.gravity 'Center'
