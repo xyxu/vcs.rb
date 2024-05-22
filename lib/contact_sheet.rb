@@ -8,7 +8,7 @@ require 'yaml'
 
 module VCSRuby
   class ContactSheet
-    attr_accessor :signature, :title, :highlight, :with_header
+    attr_accessor :signature, :title, :highlight, :with_header, :out_path
     attr_accessor :softshadow, :timestamp, :polaroid
     attr_reader :thumbnail_width, :thumbnail_height, :aspect_ratio, :format
     attr_reader :length, :from, :to
