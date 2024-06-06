@@ -108,7 +108,7 @@ module VCSRuby
     end
 
     def from= time
-      if (TimeIndex.new(0) < time) && (time < to) && (time < @length)
+      if (TimeIndex.new(0) <= time) && (time < to) && (time < @length)
         @from = time
       else
         raise "Invalid From Time"
